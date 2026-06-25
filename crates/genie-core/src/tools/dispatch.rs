@@ -167,6 +167,37 @@ fn parse_memory_forget_query(args: &serde_json::Value) -> Result<&str> {
 /// `normalize_memories_to_store` so all valid shapes (aliases, catch-all, `name`)
 /// still pass; only missing/empty/wrong-type content is rejected.
 fn parse_memory_store_content(args: &serde_json::Value) -> Result<Vec<(String, String)>> {
+    // Check primary content keys - if they exist, they must be valid strings
+    for key in ["content", "fact", "text", "memory", "note"] {
+        if let Some(value) = args.get(key) {
+            if !value.is_string() {
+                anyhow::bail!("memory_store requires non-empty string argument '{}'", key);
+            }
+            let s = value.as_str().unwrap_or("");
+            if s.trim().is_empty() {
+                anyhow::bail!("memory_store requires non-empty string argument '{}'", key);
+            }
+            // Valid content found, proceed to normalization
+            let memories = normalize_memories_to_store(args);
+            return Ok(memories);
+        }
+    }
+
+    // Check name field - if it exists, it must be a valid string
+    if let Some(value) = args.get("name") {
+        if !value.is_string() {
+            anyhow::bail!("memory_store requires non-empty string argument 'name'");
+        }
+        let s = value.as_str().unwrap_or("");
+        if s.trim().is_empty() {
+            anyhow::bail!("memory_store requires non-empty string argument 'name'");
+        }
+        // Valid name found, proceed to normalization
+        let memories = normalize_memories_to_store(args);
+        return Ok(memories);
+    }
+
+    // No primary content or name found, try catch-all
     let memories = normalize_memories_to_store(args);
     if memories.is_empty() {
         anyhow::bail!("memory_store requires non-empty string argument 'content'");

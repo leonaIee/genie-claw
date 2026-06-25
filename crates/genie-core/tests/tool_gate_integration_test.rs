@@ -908,6 +908,14 @@ async fn memory_store_rejects_invalid_arguments_and_audits() {
             serde_json::json!({"content": 123}),
             "memory_store requires non-empty string argument 'content'",
         ),
+        (
+            serde_json::json!({"content": {"nested": "fact"}}),
+            "memory_store requires non-empty string argument 'content'",
+        ),
+        (
+            serde_json::json!({"content": []}),
+            "memory_store requires non-empty string argument 'content'",
+        ),
     ];
     let expected_audit_count = invalid_calls.len();
 
